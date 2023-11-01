@@ -1,125 +1,138 @@
-function OrbitCamera (input) {
-	this.cameraWorldMatrix = new Matrix4();
-	this.cameraTarget = new Vector4(0, 0, 0, 1);
-	this.yawDegrees = 0;
-	this.pitchDegrees = -45;
-	this.minDistance = 1;
-	this.maxDistance = 30;
-	this.zoomScale = 1;
+function OrbitCamera(input) {
+    this.cameraWorldMatrix = new Matrix4();
+    this.cameraTarget = new Vector4(0, 0, 0, 1);
+    this.yawDegrees = 0;
+    this.pitchDegrees = -45;
+    this.minDistance = 1;
+    this.maxDistance = 30;
+    this.zoomScale = 1;
 
-	var lastMouseX = 0;
-	var lastMouseY = 0;
-	var isDragging = false;
+    var lastMouseX = 0;
+    var lastMouseY = 0;
+    var isDragging = false;
 
-	// -------------------------------------------------------------------------
-	this.getViewMatrix = function() {
-		// todo #1 - return the correct view matrix (you will need to use "clone")
-		return new Matrix4();
-	}
+    // -------------------------------------------------------------------------
+    this.getViewMatrix = function() {
+        // todo #1 - return the correct view matrix (you will need to use "clone")
 
-	// -----------------------------------------------------------------------------
-	this.getPosition = function() {
-		// todo #9 - return a vector4 of the camera's world position contained in its matrix
-	}
+        return this.cameraWorldMatrix.clone().inverse();
+    }
 
-	// -------------------------------------------------------------------------
-	this.getRight = function() {
-		return new Vector3(
-			this.cameraWorldMatrix.elements[0],
-			this.cameraWorldMatrix.elements[4],
-			this.cameraWorldMatrix.elements[8]
-		).normalize();
-	}
+    // -----------------------------------------------------------------------------
+    this.getPosition = function() {
+        // todo #9 - return a vector4 of the camera's world position contained in its matrix
+    }
 
-	// -------------------------------------------------------------------------
-	this.getUp = function() {
-		return new Vector3(
-			this.cameraWorldMatrix.elements[1],
-			this.cameraWorldMatrix.elements[5],
-			this.cameraWorldMatrix.elements[9]
-		).normalize();
-	}
+    // -------------------------------------------------------------------------
+    this.getRight = function() {
+        return new Vector3(
+            this.cameraWorldMatrix.elements[0],
+            this.cameraWorldMatrix.elements[4],
+            this.cameraWorldMatrix.elements[8]
+        ).normalize();
+    }
 
-	// -------------------------------------------------------------------------
-	this.update = function(dt, secondsElapsedSinceStart) {
-		// Extract the basis vector corresponding to forward
-		var currentForward = new Vector3(
-			this.cameraWorldMatrix.elements[2],
-			this.cameraWorldMatrix.elements[6],
-			this.cameraWorldMatrix.elements[10]
-		);
+    // -------------------------------------------------------------------------
+    this.getUp = function() {
+        return new Vector3(
+            this.cameraWorldMatrix.elements[1],
+            this.cameraWorldMatrix.elements[5],
+            this.cameraWorldMatrix.elements[9]
+        ).normalize();
+    }
 
-		var tether = new Vector4(0, 0, this.minDistance + (this.maxDistance - this.minDistance) * this.zoomScale, 0);
-		yaw = new Matrix4().makeRotationY(this.yawDegrees);
-		pitch = new Matrix4().makeRotationX(this.pitchDegrees);
+    // -------------------------------------------------------------------------
+    this.update = function(dt, secondsElapsedSinceStart) {
+        // Extract the basis vector corresponding to forward
+        var currentForward = new Vector3(
+            this.cameraWorldMatrix.elements[2],
+            this.cameraWorldMatrix.elements[6],
+            this.cameraWorldMatrix.elements[10]
+        );
 
-		var transformedTether = pitch.multiplyVector(tether);
-		transformedTether = yaw.multiplyVector(transformedTether);
+        var tether = new Vector4(0, 0, this.minDistance + (this.maxDistance - this.minDistance) * this.zoomScale, 0);
+        yaw = new Matrix4().makeRotationY(this.yawDegrees);
+        pitch = new Matrix4().makeRotationX(this.pitchDegrees);
 
-		var position = this.cameraTarget.clone().add(transformedTether);
-		this.lookAt(position, new Vector4(0, 0, 0, 1));
-	}
+        var transformedTether = pitch.multiplyVector(tether);
+        transformedTether = yaw.multiplyVector(transformedTether);
 
-	// -------------------------------------------------------------------------
-	this.lookAt = function(eyePos, targetPos) {
-		var worldUp = new Vector4(0, 1, 0, 0);
+        var position = this.cameraTarget.clone().add(transformedTether);
+        this.lookAt(position, new Vector4(0, 0, 0, 1));
+    }
 
-		var cross = function(v1, v2) {
-			return new Vector4(
-				v1.y * v2.z - v1.z * v2.y,
-				v1.z * v2.x - v1.x * v2.z,
-				v1.x * v2.y - v1.y * v2.x,
-				0
-			);
-		}
+    // -------------------------------------------------------------------------
+    this.lookAt = function(eyePos, targetPos) {
+        var worldUp = new Vector4(0, 1, 0, 0);
 
-		this.cameraWorldMatrix.makeIdentity();
+        var cross = function(v1, v2) {
+            return new Vector4(
+                v1.y * v2.z - v1.z * v2.y,
+                v1.z * v2.x - v1.x * v2.z,
+                v1.x * v2.y - v1.y * v2.x,
+                0
+            );
+        }
 
-		var forward = targetPos.clone().subtract(eyePos).normalize();
-		var right = cross(forward, worldUp).normalize();
-		var up = cross(right, forward);
+        this.cameraWorldMatrix.makeIdentity();
 
-		var e = this.cameraWorldMatrix.elements;
-		e[0] = right.x; e[1] = up.x; e[2] = -forward.x; e[3] = eyePos.x;
-		e[4] = right.y; e[5] = up.y; e[6] = -forward.y; e[7] = eyePos.y;
-		e[8] = right.z; e[9] = up.z; e[10] = -forward.z; e[11] = eyePos.z;
-		e[12] = 0; e[13] = 0; e[14] = 0; e[15] = 1;
+        var forward = targetPos.clone().subtract(eyePos).normalize();
+        var right = cross(forward, worldUp).normalize();
+        var up = cross(right, forward);
 
-		return this;
-	};
+        var e = this.cameraWorldMatrix.elements;
+        e[0] = right.x;
+        e[1] = up.x;
+        e[2] = -forward.x;
+        e[3] = eyePos.x;
+        e[4] = right.y;
+        e[5] = up.y;
+        e[6] = -forward.y;
+        e[7] = eyePos.y;
+        e[8] = right.z;
+        e[9] = up.z;
+        e[10] = -forward.z;
+        e[11] = eyePos.z;
+        e[12] = 0;
+        e[13] = 0;
+        e[14] = 0;
+        e[15] = 1;
 
-	// -------------------------------------------------------------------------
-	document.onmousedown = function(evt) {
-		isDragging = true;
-		lastMouseX = evt.pageX;
-		lastMouseY = evt.pageY;
-	}
+        return this;
+    };
 
-	// -------------------------------------------------------------------------
-	document.onmousemove = function(evt) {
-		if (isDragging) {
-			this.yawDegrees -= (evt.pageX - lastMouseX) * 0.5;
-			this.pitchDegrees -= (evt.pageY - lastMouseY) * 0.5;
+    // -------------------------------------------------------------------------
+    document.onmousedown = function(evt) {
+        isDragging = true;
+        lastMouseX = evt.pageX;
+        lastMouseY = evt.pageY;
+    }
 
-			this.pitchDegrees = Math.min(this.pitchDegrees, 85);
-			this.pitchDegrees = Math.max(this.pitchDegrees, -85);
+    // -------------------------------------------------------------------------
+    document.onmousemove = function(evt) {
+        if (isDragging) {
+            this.yawDegrees -= (evt.pageX - lastMouseX) * 0.5;
+            this.pitchDegrees -= (evt.pageY - lastMouseY) * 0.5;
 
-			lastMouseX = evt.pageX;
-			lastMouseY = evt.pageY;
-		}
-	}.bind(this)
+            this.pitchDegrees = Math.min(this.pitchDegrees, 85);
+            this.pitchDegrees = Math.max(this.pitchDegrees, -85);
 
-	// -------------------------------------------------------------------------
-	document.onmousewheel = function(evt) {
-		this.zoomScale -= evt.wheelDelta * 0.001;
-		this.zoomScale = Math.min(this.zoomScale, 1);
-		this.zoomScale = Math.max(this.zoomScale, 0);
-	}.bind(this)
+            lastMouseX = evt.pageX;
+            lastMouseY = evt.pageY;
+        }
+    }.bind(this)
 
-	// -------------------------------------------------------------------------
-	document.onmouseup = function(evt) {
-		isDragging = false;
-	}
+    // -------------------------------------------------------------------------
+    document.onmousewheel = function(evt) {
+        this.zoomScale -= evt.wheelDelta * 0.001;
+        this.zoomScale = Math.min(this.zoomScale, 1);
+        this.zoomScale = Math.max(this.zoomScale, 0);
+    }.bind(this)
+
+    // -------------------------------------------------------------------------
+    document.onmouseup = function(evt) {
+        isDragging = false;
+    }
 }
 
 // EOF 00100001-10
