@@ -7,7 +7,7 @@ var time = new Time();
 var camera = new OrbitCamera(appInput);
 
 var sphereGeometryList = []; // this will be created after loading from a file
-var groundGeometry = null;   // this will be procedurally created
+var groundGeometry = null; // this will be procedurally created
 
 var projectionMatrix = new Matrix4();
 
@@ -20,9 +20,10 @@ window.onload = window['initializeAndStartRendering'];
 // we need to asynchronously fetch files from the "server" (your local hard drive)
 // all of this is stored in memory on the CPU side and must be fed to the GPU
 var loadedAssets = {
-    textureTextVS: null, textureTextFS: null, // our textured shader code text
-    sphereJSON: null,                         // the raw JSON for our sphere model
-    uvGridImage: null                         // a basic test image
+    textureTextVS: null,
+    textureTextFS: null, // our textured shader code text
+    sphereJSON: null, // the raw JSON for our sphere model
+    uvGridImage: null // a basic test image
 };
 
 // -------------------------------------------------------------------------
@@ -46,8 +47,13 @@ function initGL(canvas) {
         gl.canvasHeight = canvas.height;
 
         // todo #7
-        // todo enable depth test (z-buffering)
-        // todo enable backface culling
+        //Enable depth test(z - buffering)
+        gl.enable(gl.DEPTH_TEST);
+
+        // Enable backface culling
+        gl.enable(gl.CULL_FACE);
+        gl.frontFace(gl.CCW); // Define counterclockwise
+        gl.cullFace(gl.BACK);
     } catch (e) {}
 
     if (!gl) {
@@ -70,8 +76,8 @@ function loadAssets(onLoadedCB) {
         // Assign loaded data to our named variables
         loadedAssets.textureTextVS = values[0]; // from 1st fetch
         loadedAssets.textureTextFS = values[1]; // from 2nd fetch
-        loadedAssets.sphereJSON = values[2];    // from 3rd fetch
-        loadedAssets.uvGridImage = values[3];   // from loadImage
+        loadedAssets.sphereJSON = values[2]; // from 3rd fetch
+        loadedAssets.uvGridImage = values[3]; // from loadImage
     }).catch(function(error) {
         console.error(error.message);
     }).finally(function() {
@@ -151,17 +157,22 @@ function updateAndRender() {
 
     // todo #8
     //   1. enable blending
+    gl.enable(gl.BLEND);
     //   2. set blend mode source to gl.SRC_ALPHA and destination to gl.ONE_MINUS_SRC_ALPHA
-
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    for (var i = sphereGeometryList.length - 1; i >= 0; --i) {
+        sphereGeometryList[i].render(camera, projectionMatrix, textureShaderProgram);
+    }
     // todo #10 apply the painter's algorithm
 
     // todo #6
     // uncomment when directed by guide
-    // for (var i = 0; i < sphereGeometryList.length; ++i) {
-    //     sphereGeometryList[i].render(camera, projectionMatrix, textureShaderProgram);
-    // }
+    for (var i = 0; i < sphereGeometryList.length; ++i) {
+        sphereGeometryList[i].render(camera, projectionMatrix, textureShaderProgram);
+    }
 
     // todo - disable blending
+    gl.disable(gl.BLEND);
 }
 
 // EOF 00100001-10
